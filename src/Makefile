@@ -1,5 +1,5 @@
 OBJS = $(shell ls *.cpp | sed "s|.cpp|.o|g")
-OUTPUT = cook++
+OUTPUT = cook
 CXX = clang++
 PKGCFLAGS = $(shell pkg-config --cflags jansson)
 CXXFLAGS = -pipe -Wall -Wextra -g -march=native -pedantic -std=c++11 $(PKGCFLAGS)
