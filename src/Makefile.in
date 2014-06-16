@@ -1,0 +1,24 @@
+OBJS = $(shell ls *.cpp | sed "s|.cpp|.o|g")
+PREFIX = @prefix@
+PROGRAM = cook
+CXX = @CXX@
+CXXFLAGS = @CXXFLAGS@ @DEPS_CFLAGS@
+LDFLAGS = @LDFLAGS@ @DEPS_LIBS@
+INSTALL = install
+
+.PHONY: all compile clean check install
+
+all: compile
+
+compile: $(OBJS)
+	$(CXX) $(CXXFLAGS) $(OBJS) $(LDFLAGS) -o $(PROGRAM)
+
+clean:
+	rm -f $(OBJS) $(PROGRAM)
+
+check:
+	scan-build -o check make
+
+install: compile
+	$(INSTALL) -d $(PREFIX)/bin
+	$(INSTALL) -m 555 -t $(PREFIX)/bin $(PROGRAM)
