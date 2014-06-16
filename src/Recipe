@@ -1,0 +1,6 @@
+{
+  "compiler": "clang++",
+  "nm": "nm",
+  "flags": ["-pipe", "-Wall", "-Wextra", "-g", "-march=native", "-pedantic", "-std=c++11"],
+  "packages": ["jansson"]
+}
