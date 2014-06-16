@@ -36,6 +36,22 @@ Cook only works on linux based systems since it depends on inotify. It
 is written in C++11 and requires a modern compiler (gcc or clang). It
 also depends on jansson to parse YAML.
 
+The build process requires GNUMake, autoconf and pkg-config.
+
+
+Installation
+------------
+
+Cook uses a autoconf build process. To build, from the root project
+directory, run:
+
+```BASH
+aclocal
+autoconf
+./configure
+make install
+```
+
 
 Using
 -----
@@ -59,10 +75,3 @@ valid YAML. Here is a brief example:
 - libs: contains the compiler flags added during the linking phase.
 - packages: uses pkg-config to generate the appropriate cflags and
   libs for the packages. Automatically adds them to flags and libs.
-
-
-Installation
-------------
-
-There is no automatic installation option at the moment since this is
-experimental software.
