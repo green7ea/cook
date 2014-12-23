@@ -2,8 +2,6 @@
 
 #include "Config.h"
 
-class Program;
-
 class Object
 {
 
@@ -12,7 +10,6 @@ public:
     ~Object();
     bool operator==(const Object &obj) const;
     const std::string & get_filename() const;
-    Program * get_program() const;
     void update(const Config &config);
     bool contains(const std::string &symbol) const;
     bool depends_on(const Object &obj) const;
@@ -25,6 +22,4 @@ private:
     std::string obj_file;
     std::vector<std::string> defined_symbols;
     std::vector<std::string> undefined_symbols;
-
-    Program *program;
 };

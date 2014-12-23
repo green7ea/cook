@@ -7,20 +7,19 @@
 #include "utils.h"
 #include "UnistdError.h"
 #include "Process.h"
-#include "Program.h"
+#include "ObjectCollection.h"
 #include "FileDispatcher.h"
 
 Object::Object(const std::string &cpp_file)
     : cpp_file(cpp_file),
-      obj_file(std::regex_replace(cpp_file, std::regex("\\.cpp"), ".o")),
-      program(nullptr)
+      obj_file(std::regex_replace(cpp_file, std::regex("\\.cpp"), ".o"))
 {
 
 }
 
 Object::~Object()
 {
-    delete program;
+
 }
 
 bool Object::operator==(const Object &obj) const
@@ -31,11 +30,6 @@ bool Object::operator==(const Object &obj) const
 const std::string & Object::get_filename() const
 {
     return obj_file;
-}
-
-Program * Object::get_program() const
-{
-    return program;
 }
 
 void Object::update(const Config &config)
@@ -75,6 +69,13 @@ void Object::compile(const Config &config)
     const std::vector<std::string> flags = config.flags;
     std::vector<std::string> args = {compiler};
     args = args + flags;
+
+    if (true)
+    {
+        // TODO do this only if we need to build libraries
+        args.push_back("-fPIC");
+    }
+
     args = args + std::vector<std::string>({"-c", cpp_file, "-o", obj_file});
 
     // TODO move this logic elsewhere because this will block the
@@ -88,7 +89,8 @@ void Object::compile(const Config &config)
     }
     catch(const UnistdError &e)
     {
-        // One of the files wasn't found, probably the .o
+        // One of the files wasn't found, probably the .o. This means
+        // we have to keep going and build it so we can safely ignore.
     }
 
     printf("Compiling:\n");
@@ -117,12 +119,4 @@ void Object::extract_symbols(const Config &config)
 
     std::sort(defined_symbols.begin(), defined_symbols.end());
     std::sort(undefined_symbols.begin(), undefined_symbols.end());
-
-    if (contains("main"))
-    {
-        if (!program)
-        {
-            program = new Program(this);
-        }
-    }
 }

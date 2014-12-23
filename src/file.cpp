@@ -34,6 +34,12 @@ std::string get_extension(const std::string &filename)
     return "";
 }
 
+std::string strip_extension(const std::string &filename)
+{
+    std::regex extension("\\.[^\\.]*$");
+    return std::regex_replace(filename, extension, "");
+}
+
 std::string to_abs_path(const std::string &filepath)
 {
     if (filepath.length() < 1 || filepath[0] == '/')

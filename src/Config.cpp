@@ -11,7 +11,7 @@
 #include "Process.h"
 #include "utils.h"
 
-static std::string getValue(json_t *root, const std::string &name)
+static std::string get_value(json_t *root, const std::string &name)
 {
     json_t *res = json_object_get(root, name.c_str());
     if (!res)
@@ -27,7 +27,7 @@ static std::string getValue(json_t *root, const std::string &name)
     return "";
 }
 
-static std::vector<std::string> getArray(json_t *root, const std::string &name)
+static std::vector<std::string> get_array(json_t *root, const std::string &name)
 {
     json_t *res = json_object_get(root, name.c_str());
     if (!res)
@@ -54,6 +54,45 @@ static std::vector<std::string> getArray(json_t *root, const std::string &name)
     }
 
     return {};
+}
+
+static std::vector<Library> get_libraries(json_t *root, const std::string &name)
+{
+    json_t *shared_map = json_object_get(root, name.c_str());
+    if (!shared_map)
+    {
+        return {};
+    }
+
+    std::vector<Library> shared_map_res;
+    if (json_is_object(shared_map))
+    {
+        const char *key;
+        json_t *value;
+
+        json_object_foreach(shared_map, key, value)
+        {
+            if (json_is_array(value))
+            {
+                Library shared_object;
+                shared_object.name = key;
+
+                for (int i = 0, size = json_array_size(value);
+                     i < size; ++i)
+                {
+                    json_t *elem = json_array_get(value, i);
+
+                    if (json_is_string(elem))
+                    {
+                        shared_object.objects.push_back(json_string_value(elem));
+                    }
+                }
+                shared_map_res.push_back(shared_object);
+            }
+        }
+    }
+
+    return shared_map_res;
 }
 
 Config::Config(const std::string &filename)
@@ -87,12 +126,13 @@ Config::Config(const std::string &filename)
         throw Error("Badly formed file " + filename);
     }
 
-    compiler = getValue(root, "compiler");
-    nm = getValue(root, "nm");
-    flags = getArray(root, "flags");
-    libs = getArray(root, "libs");
-    packages = getArray(root, "packages");
-    defines = getArray(root, "defines");
+    compiler = get_value(root, "compiler");
+    nm = get_value(root, "nm");
+    flags = get_array(root, "flags");
+    libs = get_array(root, "libs");
+    packages = get_array(root, "packages");
+    defines = get_array(root, "defines");
+    shared = get_libraries(root, "shared");
 
     pkg_config();
 }

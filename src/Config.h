@@ -4,6 +4,12 @@
 #include <jansson.h>
 #include <vector>
 
+struct Library
+{
+    std::string name;
+    std::vector<std::string> objects;
+};
+
 class Config
 {
 
@@ -16,6 +22,7 @@ public:
     std::vector<std::string> libs;
     std::vector<std::string> packages;
     std::vector<std::string> defines;
+    std::vector<Library> shared;
 
 private:
     void pkg_config();

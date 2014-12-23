@@ -29,6 +29,17 @@ int main(int argc, char **argv)
                                     {
                                         print_help(argv[0], arg_table);
                                         exit(0);
+                                    } },
+                                   {"--flags", "-f", false,
+                                    [&](const std::string &)
+                                    {
+                                        Config config("Recipe");
+                                        for (const auto &flag: config.flags)
+                                        {
+                                            printf("%s ", flag.c_str());
+                                        }
+                                        printf("\n");
+                                        exit(0);
                                     } } };
     parse_arguments(argc, argv, arg_table);
 
@@ -41,19 +52,22 @@ int main(int argc, char **argv)
         file_dispatcher.add_source(to_relative_path(to_abs_path(file)));
     }
     file_dispatcher.generate_programs();
-
-    INotify notify;
-    notify.add_watch(".");
+    file_dispatcher.generate_libraries();
 
     if (running)
     {
         printf("Watching for file changes\n");
-    }
-    while (running)
-    {
-        if (notify.wait_for_file_change(&file_dispatcher))
+
+        INotify notify;
+        notify.add_watch(".");
+
+        while (running)
         {
-            file_dispatcher.generate_programs();
+            if (notify.wait_for_file_change(&file_dispatcher))
+            {
+                file_dispatcher.generate_programs();
+                file_dispatcher.generate_libraries();
+            }
         }
     }
 

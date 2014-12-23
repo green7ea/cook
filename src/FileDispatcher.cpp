@@ -4,7 +4,8 @@
 #include <regex>
 #include <algorithm>
 
-#include "Program.h"
+#include "ObjectCollection.h"
+#include "Error.h"
 #include "utils.h"
 #include "file.h"
 
@@ -54,37 +55,82 @@ bool FileDispatcher::update(const std::string &filename)
     return updated;
 }
 
+static std::vector< std::shared_ptr<Object> > objects_from_sources(
+    const std::vector<SourceFile> &source_files)
+{
+    auto objects = map< SourceFile, std::shared_ptr<Object> >(
+        source_files,
+        [](const SourceFile &input) -> std::shared_ptr<Object>
+        {
+            return input.get_object();
+        });
+    return objects;
+}
+
 void FileDispatcher::generate_programs()
 {
     for (auto &source_file: source_files)
     {
         source_file.update(config);
     }
+    auto objects = objects_from_sources(source_files);
+    auto mains = objects;
 
-    auto objs = map< SourceFile, std::shared_ptr<Object> >(
-        source_files,
-        [](const SourceFile &input) -> std::shared_ptr<Object>
+    filter< std::shared_ptr<Object> >(
+        mains,
+        [](const std::shared_ptr<Object> &obj) -> bool
         {
-            return input.get_object();
-        });
+            return !(obj->contains("main"));
+        } );
 
-    auto progs = map< std::shared_ptr<Object>, Program * >(
-        objs,
-        [](const std::shared_ptr<Object> &obj)
-        {
-            return obj->get_program();
-        });
-
-    filter<Program *>(
-        progs,
-        [](Program *ptr) -> bool
-        {
-            return ptr == nullptr;
-        });
-
-    for (auto &prog: progs)
+    for (auto &main: mains)
     {
-        prog->resolve_dependencies(objs);
-        prog->link(config);
+        std::string progam_name = strip_extension(main->get_filename());
+        ObjectCollection collection(progam_name,
+                                    std::vector< std::shared_ptr<Object> >({main}));
+        collection.resolve_dependencies(objects);
+        collection.link_into_program(config);
     }
+}
+
+void FileDispatcher::generate_libraries()
+{
+    for (const Library &lib: config.shared)
+    {
+        try
+        {
+            auto initial_objects = get_objects(lib);
+            auto objects = objects_from_sources(source_files);
+            ObjectCollection collection(lib.name, initial_objects);
+            collection.resolve_dependencies(objects);
+            collection.link_into_shared_object(config);
+        }
+        catch (Error &e)
+        {
+            printf("%s\n\nNot building %s\n\n",
+                   e.what(), lib.name.c_str());
+        }
+    }
+}
+
+std::vector< std::shared_ptr<Object> > FileDispatcher::get_objects(const Library &lib)
+{
+    std::vector< std::shared_ptr<Object> > results;
+
+    for (auto &source_name: lib.objects)
+    {
+        auto source = std::find_if(source_files.begin(),
+                                   source_files.end(),
+                                   [&](const SourceFile &source) -> bool
+                                   {
+                                       return (source.get_filename() == source_name);
+                                   });
+        if (source == source_files.end())
+        {
+            throw Error("Source file not found: '" + source_name + "'.");
+        }
+        results.push_back(source->get_object());
+    }
+
+    return results;
 }
