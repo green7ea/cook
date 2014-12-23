@@ -102,7 +102,7 @@ Config::Config(const std::string &filename)
     int fd = open(filename.c_str(), O_RDONLY);
     if (fd < 0)
     {
-        throw UnistdError("Openning " + filename, errno);
+        throw UnistdError("Couldn't open file " + filename, errno);
     }
     Ressource fd_cleanup([&]() { close(fd); });
     std::string text = read_all_fd(fd);

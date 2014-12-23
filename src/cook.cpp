@@ -4,6 +4,7 @@
 #include "Process.h"
 #include "INotify.h"
 #include "FileDispatcher.h"
+#include "UnistdError.h"
 
 #include "utils.h"
 #include "file.h"
@@ -43,32 +44,42 @@ int main(int argc, char **argv)
                                     } } };
     parse_arguments(argc, argv, arg_table);
 
-    Config config("Recipe");
-    FileDispatcher file_dispatcher(config);
-
-    auto files = getFiles();
-    for (const auto &file: files)
+    try
     {
-        file_dispatcher.add_source(to_relative_path(to_abs_path(file)));
-    }
-    file_dispatcher.generate_programs();
-    file_dispatcher.generate_libraries();
+        Config config("Recipe");
 
-    if (running)
-    {
-        printf("Watching for file changes\n");
 
-        INotify notify;
-        notify.add_watch(".");
+        FileDispatcher file_dispatcher(config);
 
-        while (running)
+        auto files = getFiles();
+        for (const auto &file: files)
         {
-            if (notify.wait_for_file_change(&file_dispatcher))
+            file_dispatcher.add_source(to_relative_path(to_abs_path(file)));
+        }
+        file_dispatcher.generate_programs();
+        file_dispatcher.generate_libraries();
+
+        if (running)
+        {
+            printf("Watching for file changes\n");
+
+            INotify notify;
+            notify.add_watch(".");
+
+            while (running)
             {
-                file_dispatcher.generate_programs();
-                file_dispatcher.generate_libraries();
+                if (notify.wait_for_file_change(&file_dispatcher))
+                {
+                    file_dispatcher.generate_programs();
+                    file_dispatcher.generate_libraries();
+                }
             }
         }
+    }
+    catch (UnistdError e)
+    {
+        fprintf(stderr, "%s.\n", e.what());
+        return 1;
     }
 
     return 0;
